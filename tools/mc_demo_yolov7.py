@@ -2,6 +2,7 @@ import argparse
 import time
 from pathlib import Path
 import sys
+import os
 
 import cv2
 import torch
@@ -143,7 +144,8 @@ def detect(save_img=False):
 
                     # save results
                     results.append(
-                        f"{i + 1},{tid},{tlwh[0]:.2f},{tlwh[1]:.2f},{tlwh[2]:.2f},{tlwh[3]:.2f},{t.score:.2f},-1,-1,-1\n"
+                        # format [frameid,track_id,class_id,x,y,w,h,conf,-1,-1,-1]
+                        f"{frame},{tid},{int(tcls)},{tlwh[0]:.2f},{tlwh[1]:.2f},{tlwh[2]:.2f},{tlwh[3]:.2f},{t.score:.2f},-1,-1,-1\n"
                     )
 
                     if save_img or view_img:  # Add bbox to image
@@ -181,10 +183,16 @@ def detect(save_img=False):
                             save_path += '.mp4'
                         vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
                     vid_writer.write(im0)
+            if save_txt:
+                res_file = os.path.join(save_dir, 'labels', f"frame_{(frame-1):05d}.txt")
+                with open(res_file, 'w+') as f:
+                    f.writelines(results)
+                    f.close()
+                print(f"Saved results to file {res_file}\n")
 
     if save_txt or save_img:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
-        # print(f"Results saved to {save_dir}{s}")
+        print(f"Results saved to {save_dir}{s}")
 
     print(f'Done. ({time.time() - t0:.3f}s)')
 
